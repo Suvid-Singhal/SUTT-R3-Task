@@ -1,0 +1,15 @@
+<head>
+    <style>
+        tr { display: block; float: left; }
+        th, td { display: block; }
+        table{ border:none; }
+    </style>
+    <h1>Student Dashboard</h1>
+    {% if menu %}
+        <ul>
+            {% for date,date_menu in menu.items %}
+                <li>{{date.date}}<hr><br>{{date_menu|safe}}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</head>

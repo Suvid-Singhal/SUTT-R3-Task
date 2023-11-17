@@ -1,0 +1,4 @@
+<h1>View Ratings</h1>
+{% for item in data %}
+    {{item.item_id}} {{item.name}} {{item.date|date}} {{item.meal_type}} {{item.avg_rating}}<br>
+{% endfor %}

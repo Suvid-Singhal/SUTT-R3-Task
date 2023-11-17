@@ -1,0 +1,26 @@
+<h1>Rate Menu</h1>
+{% for menu_item in menu %}
+    {% if menu_item.rating %}
+        {{menu_item.item_id}} {{menu_item.name}} {{menu_item.date.date}} {{menu_item.meal_type}} {{menu_item.rating}}<br>
+    {% else %}
+    {{menu_item.item_id}} {{menu_item.name}} {{menu_item.date.date}} {{menu_item.meal_type}}
+    <form method="post" action="{% url 'rate_menu' %}">
+        {% csrf_token %}
+        <select name="rating" id="rating">
+            <option>1</option>
+            <option>1.5</option>
+            <option>2</option>
+            <option>2.5</option>
+            <option>3</option>
+            <option>3.5</option>
+            <option>4</option>
+            <option>4.5</option>
+            <option>5</option>
+        </select>
+        <input type="hidden" name="item_id" value="{{menu_item.item_id}}">
+        <input type="submit" value="Save" />
+        
+    </form>
+    <br>
+    {% endif %}
+{% endfor %}

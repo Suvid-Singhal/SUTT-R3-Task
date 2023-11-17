@@ -1,0 +1,11 @@
+{% load static %}
+<h1>Complaints</h1>
+{% for complaint in complaints %}
+    {{complaint.complaint_id}}<br>
+    {{complaint.student}}<br>
+    {{complaint.date_time}}<br>
+    {{complaint.title}}<br>
+    {{complaint.description}}<br>
+    <img src="{% static '' %}{{complaint.file_url}}" width="500px">
+    <hr>
+{% endfor %}
