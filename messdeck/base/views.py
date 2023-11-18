@@ -12,6 +12,9 @@ import json
 from json2html import *
 from collections import defaultdict
 from collections import Counter
+import pandas as pd
+from django.conf import settings
+#import pytz
 
 # Create your views here.
 
@@ -45,14 +48,88 @@ def home(request):
 @login_required
 def dashboard(request):
     if request.user.is_staff or request.user.is_superuser:
-        return render(request,'staff_dashboard.html')
+        if request.method=='POST':
+            data={}
+            users=list(models.User.objects.filter(is_staff=False).values())
+            users_list=[]
+            fees_list=[]
+            for user in users:
+                fees=0
+                today=datetime.date.today()
+                fivedaysback=today-datetime.timedelta(days=5)
+                attendance=list(models.Attendance.objects.filter(user_id=user['username'],date__gte=fivedaysback).values())
+                for i in attendance:
+                    if i['meal_type']=='breakfast':
+                        fees+=80
+                    elif i['meal_type']=='lunch':
+                        fees+=180
+                    elif i['meal_type']=='dinner':
+                        fees+=150
+                users_list.append(user['username'])
+                fees_list.append(fees)
+            data['Student']=users_list
+            data['Fees']=fees_list
+            df=pd.DataFrame(data)
+            writer=open(f'static/bills/bill-{datetime.datetime.now().date()}.xlsx','wb+')
+            df.to_excel(writer, sheet_name='Bills', index=False)
+            writer.close()
+        today=datetime.date.today()
+        fivedaysback=today-datetime.timedelta(days=5)
+        attendance=list(models.Attendance.objects.filter(date__gte=fivedaysback).values())
+        #print(fivedaysback)
+        data=[]
+        for i in range(0,6):
+            data.append({'date':today-datetime.timedelta(days=i),'breakfast':0,'lunch':0,'dinner':0})
+        for i in attendance:
+            index=(today-i['date']).days
+            data[index][i['meal_type']]+=1
+        print(data)
+        context={'data':data}
+        return render(request,'staff_dashboard.html',context)
     else:
         fi=open('static/menu/menu.json')
         menu=eval(fi.read())
+        #print(menu)
         if menu:
-            for date,date_menu in menu.items():
-                menu[date]=json2html.convert(date_menu)
-            context={'menu':menu}
+            #context={'menu':menu}
+            #eastern_tz = pytz.timezone('America/Sao_Paulo')
+            #now = datetime.datetime.now(eastern_tz)
+            
+            #print(now)
+            context={}
+            now = datetime.datetime.now()
+            now=now.replace(minute=0, hour=0, second=0, microsecond=0)
+            print(type(menu[now]))
+            if datetime.time(7,0,0)<=datetime.datetime.now().time()<=datetime.time(9,0,0):
+                context['meal_type']='breakfast'
+                context['menu']=menu[now]['breakfast']
+            elif datetime.time(12,0,0)<=datetime.datetime.now().time()<=datetime.time(14,0,0):
+                context['meal_type']='lunch'
+                context['menu']=menu[now]['lunch']
+            elif datetime.time(19,0,0)<=datetime.datetime.now().time()<=datetime.time(21,0,0):
+                print('ok')
+                context['meal_type']='dinner'
+                context['menu']=menu[now]['dinner']
+            elif datetime.datetime.now().time()<datetime.time(7,0,0):
+                context['menu']=menu[now]['breakfast']
+            elif datetime.datetime.now().time()<datetime.time(12,0,0):
+                context['menu']=menu[now]['lunch']
+            elif datetime.datetime.now().time()<datetime.time(19,0,0):
+                context['menu']=menu[now]['dinner']
+            elif datetime.datetime.now().time()>datetime.time(21,0,0):
+                context['menu']=menu[now+datetime.timedelta(days=1)]['breakfast']
+            print(context)
+            if request.method == 'POST':
+                attendance=models.Attendance(user_id=request.user.username,date=datetime.datetime.now().date(),meal_type=context['meal_type'])
+                attendance.save()
+                models.LastAttendance.objects.filter(user_id=request.user.username).delete()
+                last_attendance=models.LastAttendance(user_id=request.user.username,date=datetime.datetime.now().date(),meal_type=context['meal_type'])
+                last_attendance.save()
+            try:
+                if list(models.Attendance.objects.filter(user_id=request.user.username,date=datetime.datetime.now().date(),meal_type=context['meal_type']).all().values())==list(models.LastAttendance.objects.filter(user_id=request.user.username,date=datetime.datetime.now().date(),meal_type=context['meal_type']).all().values()):
+                    del context['meal_type']
+            except:
+                pass
             return render(request,'student_dashboard.html',context)
         else:
             return render(request,'student_dashboard.html')
@@ -156,5 +233,46 @@ def view_ratings(request):
         print(data)
         context={'data':data}
         return render(request,'view_ratings.html',context)
+    else:
+        return render(request,'student_dashboard.html')
+
+@login_required
+def view_menu(request):
+    if not request.user.is_staff or request.user.is_superuser:
+        fi=open('static/menu/menu.json')
+        menu=eval(fi.read())
+        if menu:
+            for date,date_menu in menu.items():
+                menu[date]=json2html.convert(date_menu)
+            context={'menu':menu}
+            return render(request,"view_menu.html",context)
+        else:
+            return render(request,"view_menu.html")
+    else:
+        return render(request,"staff_dashboard.html")
+    
+@login_required
+def calculate_fees(request):
+    if request.user.is_staff or request.user.is_superuser:
+        user=""
+        if request.method == 'POST':
+            user=request.POST['user']
+        users=list(models.User.objects.filter(is_staff=False).values())
+        fees=0
+        today=datetime.date.today()
+        fivedaysback=today-datetime.timedelta(days=5)
+        attendance=list(models.Attendance.objects.filter(user_id=user,date__gte=fivedaysback).values())
+        for i in attendance:
+            if i['meal_type']=='breakfast':
+                fees+=80
+            elif i['meal_type']=='lunch':
+                fees+=180
+            elif i['meal_type']=='dinner':
+                fees+=150
+
+        if user=="":
+            fees=None
+        context={'users':users,'fees':fees,'user':user}
+        return render(request,'calculate_fees.html',context)
     else:
         return render(request,'student_dashboard.html')

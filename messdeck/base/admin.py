@@ -3,7 +3,7 @@ from django.contrib.auth.admin import UserAdmin
 
 from .forms import CustomUserCreationForm, CustomUserChangeForm
 
-from .models import User, MenuItem, Rating, Complaint
+from .models import User, MenuItem, Rating, Complaint, Attendance
 # Register your models here.
 
 class CustomUserAdmin(UserAdmin):
@@ -33,3 +33,4 @@ admin.site.register(User, CustomUserAdmin)
 admin.site.register(MenuItem)
 admin.site.register(Rating)
 admin.site.register(Complaint)
+admin.site.register(Attendance)

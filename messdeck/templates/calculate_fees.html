@@ -1,0 +1,14 @@
+<h1>Calculate Fees</h1>
+<form method="POST" action="{% url 'calculate_fees' %}">
+    {% csrf_token %}
+    <select name="user" id="user">
+        {% for user in users %}
+            <option>{{user.username}}</option>
+        {% endfor %}
+    </select>
+    <input type="submit" value="Calculate" />
+</form>
+
+{% if fees is not None %}
+    <p>The fees for {{user}} is {{fees}}</p>
+{% endif %}

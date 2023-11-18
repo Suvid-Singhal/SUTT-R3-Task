@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser,PermissionsMixin,BaseUserManager
+from datetime import datetime
 
 # Create your models here.
 
@@ -15,7 +16,6 @@ class CustomAccountManager(BaseUserManager):
         user.is_active = True
         user.save()
         return user
-    
     
 
 class User(PermissionsMixin,AbstractBaseUser):
@@ -63,3 +63,13 @@ class Complaint(models.Model):
     def __str__(self):
         x=str(self.complaint_id)
         return x
+
+class Attendance(models.Model):
+    user=models.ForeignKey(User,on_delete=models.CASCADE)
+    date=models.DateField(default=datetime.now)
+    meal_type=models.CharField(max_length=10)
+
+class LastAttendance(models.Model):
+    user=models.ForeignKey(User,on_delete=models.CASCADE)
+    date=models.DateField(default=datetime.now)
+    meal_type=models.CharField(max_length=10)

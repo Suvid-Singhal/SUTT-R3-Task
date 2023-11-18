@@ -1,1 +1,9 @@
 <h1>Staff Dashboard</h1>
+{% for i in data %}
+    {{i.date|date}} => Breakfast: {{i.breakfast}}, Lunch: {{i.lunch}}, Dinner: {{i.dinner}}<hr><br>
+{% endfor %}
+
+<form method="post" action="{% url 'dashboard' %}">
+    {% csrf_token %}
+    <input type="submit" value="Get Bill" />
+</form>
